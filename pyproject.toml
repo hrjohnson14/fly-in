@@ -1,9 +1,7 @@
 [project]
 name = "fly-in"
 version = "0.1.0"
-description = "To design a system that efficiently routes a fleet 
-of drones from central base(start) to a target location(end),with a set of
-strict constraints"
+description = "Efficient multi-drone routing through a network of zones."
 readme = "README.md"
 requires-python = ">3.12"
 dependencies = [

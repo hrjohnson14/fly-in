@@ -1,25 +1,20 @@
-.PHONY: install run debug clean lint lint-strict 
+from dataclasses import dataclass
+from enum import Enum
 
-install:
-        uv sync
 
-run:
-    uv run python -m src
+class Zonetype(Enum):
 
-debug:
-        uv run python -m pdb -m src
+    NORMAL = "normal"
+    BLOCKED = "blocked"
+    RESTRICTED = "restricted"
+    PRIORITY = "priority"
 
-clean:
-        find . -type d -name __pycache__ -not -path './.venv/*' -exec rm -rf {} +
-        rm -rf .mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs 
-        --check-untyped-defs
 
-lint:
-        uv run flake8 --exclude=venv, .venv
-        uv run mypy . --warn-return-any
---warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs
---check-untyped-defs
-
-lint-strict:
-            uv run flake8 --exclude=venv, .venv
-            uv run mypy . --strict
+@dataclass(frozen=True)
+class zone:
+    name: str
+    x: int
+    y: int
+    zone_type: Zonetype = Zonetype.NORMAL
+    color: str | None = None
+    max_drones: int = 1
