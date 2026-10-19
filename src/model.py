@@ -17,4 +17,4 @@ class zone:
     y: int
     zone_type: Zonetype = Zonetype.NORMAL
     color: str | None = None
-    max_drones: int = 2
+    max_drones: int = 1
