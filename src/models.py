@@ -112,10 +112,19 @@ class DroneMap():
     
 
     def zone(self, name: str) -> zone:
-    
+    """Return the zone with a given name"""
+    if name not in self.zones:
+        raise ValueError(f"{name} is not a known zone")
+    return self.zones[name]
 
 
     def connection_between(self, a: str, b: str) -> connection:
         """Return the connection linking zones a and b, in either order"""
         first, second = sorted((a, b))
         lookup_key = (first, second)
+
+        if lookup_key not in self.connections:
+            raise ValueError(f"No connection exists between {a} and {b}")
+
+
+        return self.connections[lookup_key]
