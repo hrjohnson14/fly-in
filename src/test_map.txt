@@ -1,0 +1,10 @@
+
+# This is a comment
+
+A 0 0
+
+   # Another comment
+B 1 0
+C 2 0
+
+# End of file

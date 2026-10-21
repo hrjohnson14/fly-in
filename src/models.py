@@ -72,9 +72,9 @@ class Connection:
             return self.zone_a
         raise ValueError(f"{path} is not an end of this path")
 
-    def touch(self, Zone: str) -> bool:
+    def touch(self, Zone_name: str) -> bool:
         """whether this path has the given zone as one of its ends"""
-        return Zone in (self.zone_a, self.zone_b)
+        return Zone_name in (self.zone_a, self.zone_b)
 
 
 class DroneMap():
@@ -102,29 +102,28 @@ class DroneMap():
         self.adjacency: dict[str, list[str]] = self._build_adjacency()
 
     def _build_adjacency(self) -> dict[str, list[str]]:
-        """Map each zone according to the neighbours 
+        """Map each zone according to the neighbours
         they are adjacent to """
         adjacency: dict[str, list[str]] = {}
         for connection in self.connections.values():
-            adjacency.setdefault(connection.zone_a, []).append(connection.zone_b)
-            adjacency.setdefault(connection.zone_b, []).append(connection.zone_a)
+            adjacency.setdefault(connection.zone_a, []).append(
+                connection.zone_b)
+            adjacency.setdefault(connection.zone_b, []).append(
+                connection.zone_a)
         return adjacency
-    
 
-    def zone(self, name: str) -> zone:
-    """Return the zone with a given name"""
-    if name not in self.zones:
-        raise ValueError(f"{name} is not a known zone")
-    return self.zones[name]
+    def zone(self, name: str) -> Zone:
+        """Return the zone with a given name"""
+        if name not in self.zones:
+            raise ValueError(f"{name} is not a known zone")
+        return self.zones[name]
 
-
-    def connection_between(self, a: str, b: str) -> connection:
+    def connection_between(self, a: str, b: str) -> Connection:
         """Return the connection linking zones a and b, in either order"""
         first, second = sorted((a, b))
         lookup_key = (first, second)
 
         if lookup_key not in self.connections:
             raise ValueError(f"No connection exists between {a} and {b}")
-
 
         return self.connections[lookup_key]
