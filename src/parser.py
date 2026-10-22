@@ -18,7 +18,7 @@ def iter_proper_lines(path: Path) -> Iterator[tuple[int, str]]:
             yield (line_number, text)
 
 
-def split_metadata(text: str) -> tuple[str, str]:
+def split_metadata(text: str, line_number: int) -> tuple[str, str]:
     """Split 'roof1 3 4 [zone=restricted color=red]' into
     ('roof1 3 4, 'zone=restrcited color=red')
     If there's no[...] block, return('roof1 3 4', '')"""
@@ -26,8 +26,8 @@ def split_metadata(text: str) -> tuple[str, str]:
     if "[" in text:
         start = text.find("[")
         if "]" not in text:
-            raise ParseError(f"{text} is missing the"
-            "closing bracket")
+            raise ParseError(f"line {line_number}: missing"
+            f" closing ']' in '{text}'")
     
         end = text.find("]")
         body = text[:start].strip()
@@ -51,9 +51,12 @@ def split_metadata(text: str) -> tuple[str, str]:
 
 
 
-print(split_metadata("roof1 3 4 [zone=restricted color=red]"))
-print(split_metadata("roof1 3 4"))
-
+if __name__ == "__main__":
+    print(split_metadata(
+        "roof1 3 4 [zone=restricted color=red]", 1
+    ))
+    print(split_metadata("roof1 3 4 [zone=", 2))
+    print(split_metadata("roof1 3 5", 3))
 
 # path = Path("src/test_map.txt")
 
