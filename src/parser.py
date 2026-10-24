@@ -38,27 +38,25 @@ def split_metadata(text: str, line_number: int) -> tuple[str, str]:
         return text.strip(), ""
 
 
+def parse_metadata(raw: str, line_number: int) -> dict[str, str]:
+    """parse 'key=value key=value' into {"key": "value"...}"""
+    metadata: dict[str, str] = {}
+    if not raw:
+        return metadata
+    
+    for piece in raw.split():
+        parts = piece.split("=", 1)
+        if len(parts) != 2:
+            raise ParseError(f"line {line_number}: Invalid metadata format in '{piece}'")
 
+        key, value = parts
 
+        if not key or not value:
+            raise ParseError(f"line {line_number}: empty key or value in '{piece}'")
+
+        if key in metadata:
+            raise ParseError(f"line {line_number}:Duplicate metadata key: {key}")
         
+        metadata[key] = value
     
-    
-
-
-
-
-
-
-
-
-if __name__ == "__main__":
-    print(split_metadata(
-        "roof1 3 4 [zone=restricted color=red]", 1
-    ))
-    print(split_metadata("roof1 3 4 [zone=", 2))
-    print(split_metadata("roof1 3 5", 3))
-
-# path = Path("src/test_map.txt")
-
-# for line_number, text in iter_proper_lines(path):
-#     print(line_number, text)
+    return metadata
