@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Iterator
-from models import Zone, ZoneType, Connection, DroneMap
+from .models import Zone, ZoneType, Connection, DroneMap
 
 
 class ParseError(Exception):
@@ -60,3 +60,71 @@ def parse_metadata(raw: str, line_number: int) -> dict[str, str]:
         metadata[key] = value
     
     return metadata
+
+
+def parse_zone_body(body: str, line_number: int) -> tuple[str, int, int]:
+    """Parse 'roof1 3 4 into ('roof1', 3, 4)"""
+
+    parts = body.split()
+
+    if len(parts) != 3:
+        raise ParseError(f"line {line_number}: "
+        f"expected 'name x y', got '{body}'")
+    
+    name, x_str, y_str = parts
+
+    try:
+        x = int(x_str)
+    except ValueError:
+        raise ParseError(f"line {line_number}: '{x_str}' is not a valid int")
+    
+    try:
+        y = int(y_str)
+    except ValueError:
+        raise ParseError(f"line {line_number}: '{y_str}' is not a valid int")
+    
+    return name, x, y
+
+
+def parse_zone_line(text: str, line_number: int) -> Zone:
+    """Parse a zone's body and metadata text into a zone"""
+
+    body, raw_metadata = split_metadata(text, line_number)
+    name, x , y = parse_zone_body(body, line_number)
+    metadata = parse_metadata(raw_metadata, line_number)
+
+    try:
+        zone_type = ZoneType(metadata.get("zone", "normal"))
+    except ValueError:
+        raise ParseError(
+            f"line {line_number}: Invalid zone type"
+            f"{metadata.get('zone')!r}"
+            )from None
+    
+    try:
+        max_drones = int(metadata.get("max_drones", "1"))
+    except ValueError:
+        raise ParseError(
+            f"line {line_number}: max_drones should be"
+            "a valid int"
+            )from None
+
+    if max_drones <= 0:
+        raise ParseError(
+        f"line {line_number}: max_drones must be posituve"
+        )
+    color = metadata.get("color")
+
+    return Zone(
+        name=name,
+        x=x,
+        y=y,
+        zone_type=zone_type,
+        color=color,
+        max_drones=max_drones,
+    )
+
+
+# parse_zone_line("roof1 3 4 [max_drones=3]", 1)
+# parse_zone_line("roof1 3 4 [max_drones=6]", 2)
+# parse_zone_line("roof1 3 4 [max_drones=3]", 3)
