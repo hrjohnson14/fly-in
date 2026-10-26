@@ -97,7 +97,7 @@ def parse_zone_line(text: str, line_number: int) -> Zone:
         zone_type = ZoneType(metadata.get("zone", "normal"))
     except ValueError:
         raise ParseError(
-            f"line {line_number}: Invalid zone type"
+            f"line {line_number}: Invalid zonetype"
             f"{metadata.get('zone')!r}"
             )from None
     
@@ -111,7 +111,7 @@ def parse_zone_line(text: str, line_number: int) -> Zone:
 
     if max_drones <= 0:
         raise ParseError(
-        f"line {line_number}: max_drones must be posituve"
+        f"line {line_number}: max_drones must be positive"
         )
     color = metadata.get("color")
 
@@ -125,6 +125,58 @@ def parse_zone_line(text: str, line_number: int) -> Zone:
     )
 
 
-# parse_zone_line("roof1 3 4 [max_drones=3]", 1)
-# parse_zone_line("roof1 3 4 [max_drones=6]", 2)
-# parse_zone_line("roof1 3 4 [max_drones=3]", 3)
+def parse_connection_line(text: str, line_number: int) -> Connection:
+    """parse a connection body and the remaining data in the
+    connection line by using the above functions
+    
+    also cannot use the parse_body_line because the
+    structure of both zone and connection are 
+    different"""
+
+    body, metadata = split_metadata(text, line_number)
+    metadata = parse_metadata(metadata, line_number)
+
+    parts = body.split("-")
+
+    if len(parts) != 2 or not parts[0] or not parts[1]:
+        raise ParseError(
+            f"line {line_number}: Invalid connection"
+        )
+    zone_a, zone_b = parts
+
+    try:
+        max_link_capacity = int(metadata.get("max_link_capacity", "1"))
+    except ValueError:
+        raise ParseError(
+            f"line {line_number} expected 'zoneA-zoneB', got '{body}'"
+        )from None
+    
+    if max_link_capacity <= 0:
+        raise ParseError(
+            f"line {line_number} should always be a"
+            "positive value"
+        )
+
+    return Connection(
+        zone_a=zone_a,
+        zone_b=zone_b,
+        max_link_capacity=max_link_capacity,
+    )
+
+
+
+
+
+print(parse_connection_line("roof1-roof2", 1))                          # should succeed
+print(parse_connection_line("corridorA-tunnelB [max_link_capacity=2]", 2))  # should succeed
+# print(parse_connection_line("roof1-roof2-roof3", 3))                    # should raise
+print(parse_connection_line("roof1-roof1", 4))                          # should this raise? think about it
+
+
+
+
+
+# print(parse_zone_line("roof1 3 4 [zone=restricted color=red]", 1))
+# # print(parse_zone_line("roof1 3 4 [zone=fast]", 2))          # should raise
+# print(parse_zone_line("roof1 3 4 [max_drones=0]", 3))       # should raise
+# print(parse_zone_line("start 0 0 [color=green]", 4))         # should succeed, no zone_type given
