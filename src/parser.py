@@ -97,7 +97,7 @@ def parse_zone_line(text: str, line_number: int) -> Zone:
         zone_type = ZoneType(metadata.get("zone", "normal"))
     except ValueError:
         raise ParseError(
-            f"line {line_number}: Invalid zone type"
+            f"line {line_number}: Invalid zonetype"
             f"{metadata.get('zone')!r}"
             )from None
     
@@ -111,7 +111,7 @@ def parse_zone_line(text: str, line_number: int) -> Zone:
 
     if max_drones <= 0:
         raise ParseError(
-        f"line {line_number}: max_drones must be posituve"
+        f"line {line_number}: max_drones must be positive"
         )
     color = metadata.get("color")
 
@@ -125,6 +125,98 @@ def parse_zone_line(text: str, line_number: int) -> Zone:
     )
 
 
-# parse_zone_line("roof1 3 4 [max_drones=3]", 1)
-# parse_zone_line("roof1 3 4 [max_drones=6]", 2)
-# parse_zone_line("roof1 3 4 [max_drones=3]", 3)
+def parse_connection_line(text: str, line_number: int) -> Connection:
+    """parse a connection body and the remaining data in the
+    connection line by using the above functions
+    
+    also cannot use the parse_body_line because the
+    structure of both zone and connection are 
+    different"""
+
+    body, metadata = split_metadata(text, line_number)
+    metadata = parse_metadata(metadata, line_number)
+
+    parts = body.split("-")
+
+    if len(parts) != 2 or not parts[0] or not parts[1]:
+        raise ParseError(
+            f"line {line_number}: Invalid connection"
+        )
+    zone_a, zone_b = parts
+
+    try:
+        max_link_capacity = int(metadata.get("max_link_capacity", "1"))
+    except ValueError:
+        raise ParseError(
+            f"line {line_number} expected 'zoneA-zoneB', got '{body}'"
+        )from None
+    
+    if max_link_capacity <= 0:
+        raise ParseError(
+            f"line {line_number} should always be a"
+            "positive value"
+        )
+
+    return Connection(
+        zone_a=zone_a,
+        zone_b=zone_b,
+        max_link_capacity=max_link_capacity,
+    )
+
+
+class MapParser:
+    """Builds a Dronemap by processing a map file line by line"""
+
+    def __init__(self) -> None:
+        """Set up empty containers for accumulating parsed data"""
+        self.nb_drones: int | None = None
+        self.zones: dict[str, Zone] = {}
+        self.connections: dict[tuple[str, str], Connection] = {}
+        self.start: str | None = None
+        self.end: str | None = None
+
+    def _handle_nb_drones(
+    self, text: str, line_number: int
+    ) -> None:
+
+        parts = text.split(":", 1)
+        drone_nb = parts[1].strip()
+        try:
+            nb_drones = int(drone_nb)
+        except ValueError:
+            raise ParseError(
+                f"line {line_number} the value should "
+                "be an integer"
+            )from None
+
+        if nb_drones <= 0:
+            raise ParseError(
+                f"line {line_number} number of drones"
+                " should be a positive value"
+            )
+        self.nb_drones = nb_drones
+    
+        def Parse(self, path: str) -> DroneMap:
+        """Final parsing with line and zones and connections 
+        all together """
+
+
+        for line_number, text in iter_proper_lines(path):
+            if self.nb_drones is None:
+                if not text.startswith("nb_drones:"):
+                    raise ParseError(
+                        f"line {line_number}: "
+                        "nb_drones must be the first line"
+                    )
+                
+                self._handle_nb_drones(text, line_number)
+                continue
+        
+            zone = parse_zone_line(text, line_number)
+            if zone.name in self.zones:
+                raise ParseError(
+                    f"line {line_number}: duplicate zone "
+                    f"'{zone.name}'"
+                )
+
+            self.zones[zone.name] = zone
