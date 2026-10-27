@@ -196,10 +196,9 @@ class MapParser:
             )
         self.nb_drones = nb_drones
     
-        def Parse(self, path: str) -> DroneMap:
-        """Final parsing with line and zones and connections 
-        all together """
-
+    def parse(self, path: str) -> DroneMap:
+    """Final parsing with line and zones and connections 
+    all together """
 
         for line_number, text in iter_proper_lines(path):
             if self.nb_drones is None:
@@ -209,8 +208,16 @@ class MapParser:
                         "nb_drones must be the first line"
                     )
                 
-                self._handle_nb_drones(text, line_number)
+                self._handle_nb_drones(text, line_number)    
                 continue
+            if text.startswith("start_hub:"):
+                text = parse_zone_line(text, line_number)
+            elif text.startswith("end_hub:"):
+                text = parse_zone_line(text, line_number)
+            elif text.startswith("hub:"):
+                text = parse_zone_line(text, line_number)
+            elif text.startswith("connection:")
+                text = parse_connection_line
         
             zone = parse_zone_line(text, line_number)
             if zone.name in self.zones:
