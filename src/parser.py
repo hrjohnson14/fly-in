@@ -164,19 +164,59 @@ def parse_connection_line(text: str, line_number: int) -> Connection:
     )
 
 
+class MapParser:
+    """Builds a Dronemap by processing a map file line by line"""
+
+    def __init__(self) -> None:
+        """Set up empty containers for accumulating parsed data"""
+        self.nb_drones: int | None = None
+        self.zones: dict[str, Zone] = {}
+        self.connections: dict[tuple[str, str], Connection] = {}
+        self.start: str | None = None
+        self.end: str | None = None
+
+    def _handle_nb_drones(
+    self, text: str, line_number: int
+    ) -> None:
+
+        parts = text.split(":", 1)
+        drone_nb = parts[1].strip()
+        try:
+            nb_drones = int(drone_nb)
+        except ValueError:
+            raise ParseError(
+                f"line {line_number} the value should "
+                "be an integer"
+            )from None
+
+        if nb_drones <= 0:
+            raise ParseError(
+                f"line {line_number} number of drones"
+                " should be a positive value"
+            )
+        self.nb_drones = nb_drones
+    
+        def Parse(self, path: str) -> DroneMap:
+        """Final parsing with line and zones and connections 
+        all together """
 
 
+        for line_number, text in iter_proper_lines(path):
+            if self.nb_drones is None:
+                if not text.startswith("nb_drones:"):
+                    raise ParseError(
+                        f"line {line_number}: "
+                        "nb_drones must be the first line"
+                    )
+                
+                self._handle_nb_drones(text, line_number)
+                continue
+        
+            zone = parse_zone_line(text, line_number)
+            if zone.name in self.zones:
+                raise ParseError(
+                    f"line {line_number}: duplicate zone "
+                    f"'{zone.name}'"
+                )
 
-print(parse_connection_line("roof1-roof2", 1))                          # should succeed
-print(parse_connection_line("corridorA-tunnelB [max_link_capacity=2]", 2))  # should succeed
-# print(parse_connection_line("roof1-roof2-roof3", 3))                    # should raise
-print(parse_connection_line("roof1-roof1", 4))                          # should this raise? think about it
-
-
-
-
-
-# print(parse_zone_line("roof1 3 4 [zone=restricted color=red]", 1))
-# # print(parse_zone_line("roof1 3 4 [zone=fast]", 2))          # should raise
-# print(parse_zone_line("roof1 3 4 [max_drones=0]", 3))       # should raise
-# print(parse_zone_line("start 0 0 [color=green]", 4))         # should succeed, no zone_type given
+            self.zones[zone.name] = zone
