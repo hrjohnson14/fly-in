@@ -279,7 +279,13 @@ class MapParser:
         return DroneMap(
             self.nb_drones,
             self.zones,
-            self.connections,
+            self.connection,
             self.start,
             self.end,
         )
+
+if __name__ == "__main__":
+    result = MapParser().parse("maps/hard/01_maze_nightmare.txt")
+    print(result.zones)
+    print(result.connections)
+    print(result.start, result.end)
