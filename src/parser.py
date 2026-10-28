@@ -171,9 +171,11 @@ class MapParser:
         """Set up empty containers for accumulating parsed data"""
         self.nb_drones: int | None = None
         self.zones: dict[str, Zone] = {}
-        self.connections: dict[tuple[str, str], Connection] = {}
+        self.connection: dict[tuple[str, str], Connection] = {}
+        self._connection_lines: dict[tuple[str, str], int] = {}
         self.start: str | None = None
         self.end: str | None = None
+
 
     def _handle_nb_drones(
     self, text: str, line_number: int
@@ -211,7 +213,7 @@ class MapParser:
         """Final parsing with line and zones and connections 
         all together """
 
-        for line_number, text in iter_proper_lines(path):
+        for line_number, text in iter_proper_lines(Path(path)):
             if self.nb_drones is None:
                 if not text.startswith("nb_drones:"):
                     raise ParseError(
@@ -250,7 +252,7 @@ class MapParser:
                 if connection.key in self.connection:
                     raise ParseError(
                         f"line {line_number}: duplicate connection"
-                        f"'{connection.zone_a}-{connection.zone_b}"
+                        f"'{connection.zone_a}-{connection.zone_b}'"
                     )
                 self.connection[connection.key] = connection
                 self._connection_lines[connection.key] = line_number
