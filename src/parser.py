@@ -196,9 +196,20 @@ class MapParser:
             )
         self.nb_drones = nb_drones
     
+    def _add_zone(self, body: str, line_number: int) -> Zone:
+        """Parse a zone body and register it, rejecting
+        duplicates"""
+        zone = parse_zone_line(body, line_number)
+        if zone.name in self.zones:
+            raise ParseError(
+                f"line {line_number}: duplicate zone '{zone.name}'"
+            )
+        self.zones[zone.name] = zone
+        return zone
+    
     def parse(self, path: str) -> DroneMap:
-    """Final parsing with line and zones and connections 
-    all together """
+        """Final parsing with line and zones and connections 
+        all together """
 
         for line_number, text in iter_proper_lines(path):
             if self.nb_drones is None:
@@ -211,19 +222,62 @@ class MapParser:
                 self._handle_nb_drones(text, line_number)    
                 continue
             if text.startswith("start_hub:"):
-                text = parse_zone_line(text, line_number)
-            elif text.startswith("end_hub:"):
-                text = parse_zone_line(text, line_number)
-            elif text.startswith("hub:"):
-                text = parse_zone_line(text, line_number)
-            elif text.startswith("connection:")
-                text = parse_connection_line
-        
-            zone = parse_zone_line(text, line_number)
-            if zone.name in self.zones:
-                raise ParseError(
-                    f"line {line_number}: duplicate zone "
-                    f"'{zone.name}'"
-                )
+                if self.start is not None:
+                    raise ParseError(
+                        f"line {line_number}: duplicate start_hub"
+                    )
+                body = text[len("start_hub:"):].strip()
+                self.start = self._add_zone(body, line_number).name
 
-            self.zones[zone.name] = zone
+            elif text.startswith("end_hub:"):
+                if self.end is not None:
+                    raise ParseError(
+                        f"line {line_number}: duplicate end_hub"
+                    )
+                body = text[len("end_hub:"):].strip()
+                self.end = self._add_zone(body, line_number).name
+        
+            elif text.startswith("hub:"):
+                body = text[len("hub:"):].strip()
+                self._add_zone(body, line_number)
+
+            elif text.startswith("connection:"):
+                body = text[len("connection:"):].strip()
+                try:
+                connection = parse_connection_line(body, line_number)
+                except:
+                    raise ParseError(f"line {line_number}: {e}") from None
+                if connection.key in self.connection:
+                    raise ParseError(
+                        f"line {line_number}: duplicate connection"
+                        f"'{connection.zone_a}-{connection.zone_b}"
+                    )
+                self.connection[connection.key] = connection
+                self._connection_lines[connection.key] = line_number
+            else:
+                raise ParseError(
+                    f"line {line_number}: unrecognised line '{text}'"
+                )
+            
+        if self.nb_drones is None:
+            raise ParseError("missing nb_drones")
+        if self.start is None:
+            raise ParseError("missing start_hub")
+        if self.end is None:
+            raise ParseError("missing end_hub")
+
+        for key, connection in self.connection.items():
+            for name in key:
+                if name not in self.zones:
+                    raise ParseError(
+                        f"line {self._connection_lines[key]}: connection "
+                        f"references unknown zone '{name}'"
+                    )
+        
+        return DroneMap(
+            self.nb_drones,
+            self.zones,
+            self.connections,
+            self.start,
+            self.end,
+        )
