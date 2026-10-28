@@ -244,7 +244,7 @@ class MapParser:
             elif text.startswith("connection:"):
                 body = text[len("connection:"):].strip()
                 try:
-                connection = parse_connection_line(body, line_number)
+                    connection = parse_connection_line(body, line_number)
                 except:
                     raise ParseError(f"line {line_number}: {e}") from None
                 if connection.key in self.connection:
