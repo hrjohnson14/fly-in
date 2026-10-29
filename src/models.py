@@ -127,4 +127,3 @@ class DroneMap():
             raise ValueError(f"No connection exists between {a} and {b}")
 
         return self.connections[lookup_key]
-            
