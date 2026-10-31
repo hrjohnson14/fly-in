@@ -20,6 +20,7 @@ class Delivered:
     """A drone that has reached the end zone"""
     pass
 
+
 @dataclass
 class Drone:
     """A single drone and its current position in the simulation"""
