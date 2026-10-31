@@ -30,7 +30,7 @@ def validate_move(
              )
 
     elif isinstance(current, InZone) and isinstance(proposed, InTransit):
-        from_zone, to_zone = proposed.connection
+        from_zone, to_zone = proposed.departure, proposed.destination
 
         if from_zone != current.zone:
             raise SimulationError(
@@ -51,13 +51,20 @@ def validate_move(
                 f"non-restricted zone: {to_zone}"
             )
 
-    elif isinstance(current, InTransit) and isinstance(proposed, InTransit):
-        raise SimulationError(
-            "A drone in transit must arrive this turn, it "
-            "cannot remain in transit"
-        )
+    elif isinstance(current, InTransit) and isinstance(proposed, InZone):
+        if proposed.zone != current.destination:
+            raise SimulationError(
+                "Drone did not arrive at the expected destination"
+            )
+        # if not current.arrives_next_turn:
+        #     raise SimulationError(
+        #         "Drone did not arrive yet"
+        #     )
 
+    else:
+        raise SimulationError(f"illegal transition: {current} -> {proposed}")
 
+    
 
 if __name__ == "__main__":
     drone_map = MapParser().parse("maps/medium/03_priority_puzzle.txt")

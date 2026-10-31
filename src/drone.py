@@ -10,8 +10,10 @@ class InZone:
 
 @dataclass(frozen=True)
 class InTransit:
-    """A drone crossing a connection toward a restricted zone"""
-    connection: tuple[str, str]
+    """A drone crossing a connection, heading from departure
+    toward a destination(a restricted zone)"""
+    departure: str
+    destination: str
     arrives_next_turn: bool
 
 
