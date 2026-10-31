@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class Inzone:
+class InZone:
     """A drone currently sitting in a zone"""
     zone: str
 
@@ -22,7 +22,7 @@ class Delivered:
 
 
 @dataclass
-class Drone:
+class DroneState:
     """A single drone and its current position in the simulation"""
     drone_id: str
-    state: Inzone | InTransit | Delivered
+    state: InZone | InTransit | Delivered

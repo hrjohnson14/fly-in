@@ -127,3 +127,7 @@ class DroneMap():
             raise ValueError(f"No connection exists between {a} and {b}")
 
         return self.connections[lookup_key]
+
+    def neighbors(self, name: str) -> list[str]:
+        """Return the names of zones adjacent to the given zone."""
+        return self.adjacency.get(name, [])
