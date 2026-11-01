@@ -1,5 +1,5 @@
 from .error import SimulationError
-from .drone import DroneState, InTransit, InZone, Delivered
+from .drone import DroneState, InTransit, InZone, Delivered, Drone
 from .models import DroneMap, ZoneType
 from .parser import MapParser
 
@@ -60,6 +60,11 @@ def validate_move(
         #     raise SimulationError(
         #         "Drone did not arrive yet"
         #     )
+    elif isinstance(current, InZone) and isinstance(proposed, Delivered):
+        if current.zone != drone_map.end:
+            raise SimulationError(
+                f"cannot be delivered from non-end zone: {current.zone}"
+            )
 
     else:
         raise SimulationError(f"illegal transition: {current} -> {proposed}")
@@ -137,3 +142,19 @@ def run_turn(
     check_connection_capacity(proposed_moves, drone_map)
 
     apply_turn(drones, proposed_moves)
+
+
+def run_simulation(
+    drones: dict[str, Drone],
+    drone_map: DroneMap,
+    propose_moves,
+) -> int:
+    """Run turns until every drone is delivered, returns the 
+    number of turns taken"""
+    turn = 0
+
+    while not all(isinstance(d.state, Delivered) for d in drones.values()):
+        turn += 1
+        proposed = propose_moves(drones, drone_map, turn)
+        run_turn(drones, proposed, drone_map)
+    return turn
