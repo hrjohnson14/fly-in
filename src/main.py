@@ -3,7 +3,7 @@ from pathlib import Path
 from .parser import MapParser, ParseError
 from .drone import InZone, Drone
 from .planner import shortest_paths_to_end, propose_moves
-from .simulation import run_simulation
+from .simulation import Engine
 from .error import SimulationError
 
 
@@ -42,7 +42,8 @@ def run(argv: list[str]) -> int:
         return propose_moves(drones, drone_map, previous)
 
     try:
-        turns = run_simulation(drones, drone_map, propose)
+        engine = Engine(drone_map)
+        turns = engine.run_simulation(drones, propose)
     except SimulationError as e:
         print(f"Error: {e}")
         return 1

@@ -1,7 +1,7 @@
 from .models import DroneMap
 from .parser import MapParser
 from .drone import DroneState, InTransit, InZone, Delivered, Drone
-from .simulation import run_simulation
+from .simulation import Engine
 import heapq
 
 
@@ -93,5 +93,6 @@ if __name__ == "__main__":
     def propose(drones, drone_map, _turn):
         return propose_moves(drones, drone_map, previous)
 
-    turns = run_simulation(drones, drone_map, propose)
+    engine = Engine(drone_map)
+    turns = engine.run_simulation(drones, propose)
     print(f"Delivered in {turns} turns")
