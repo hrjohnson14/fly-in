@@ -106,6 +106,21 @@ propose moves and O(D) to validate and apply them, where D is the number
 of active drones, so the whole simulation is O((V + E) log V + T·D) where
 T is the number of turns taken.
 
+
+## Example
+
+Given: 'maps/medium/03_priority_puzzle.txt'
+D1-fast_junction D2-fast_junction
+D1-fast_path D3-fast_junction
+D1-merge_point D2-fast_path D4-fast_junction
+D1-goal D2-merge_point D3-fast_path D5-fast_junction
+D2-goal D3-merge_point D4-fast_path
+D3-goal D4-merge_point D5-fast_path
+D4-goal D5-merge_point
+D5-goal
+
+Completed in 8 turns.
+
 ## Visual Representation
 
 Each simulation turn is printed as one line, following the exact format

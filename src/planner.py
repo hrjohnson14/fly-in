@@ -5,93 +5,104 @@ from .simulation import Engine
 import heapq
 
 
-def shortest_paths_to_end(drone_map: DroneMap) -> dict[str, str]:
-    """Run dijkstra once from the end zone, outward across the 
-    whole map. Returns a 'previous' dict: for each zone, the next 
-    zone to step throuigh on the cheapest pat toward the end"""
-    end = drone_map.end
-    distances: dict[str, int] = {end: 0}
-    previous: dict[str, str] = {}
-    visited: set[str] = set()
-    queue: list[tuple[int, str]] = [(0, end)]
+class Planner:
+    """computes shortest paths to the end zone and proposes
+    turn by turn moves for every drone"""
 
-    while queue:
-        dist, current = heapq.heappop(queue)
-        if current in visited:
-            continue
-        visited.add(current)
+    def __init__(self, drone_map: DroneMap) -> None:
+        self.drone_map = drone_map
 
-        for neighbor in drone_map.neighbors(current):
-            zone = drone_map.zone(current)
-            if not zone.zone_type.is_passable:
+    def shortest_paths_to_end(self) -> dict[str, str]:
+        """Run dijkstra once from the end zone, outward across the
+        whole map. Returns a 'previous' dict: for each zone, the next
+        zone to step throuigh on the cheapest pat toward the end"""
+        end = self.drone_map.end
+        distances: dict[str, int] = {end: 0}
+        previous: dict[str, str] = {}
+        visited: set[str] = set()
+        queue: list[tuple[int, str]] = [(0, end)]
+
+        while queue:
+            dist, current = heapq.heappop(queue)
+            if current in visited:
                 continue
-            new_dist = dist + zone.zone_type.cost
-            if neighbor not in distances or new_dist < distances[neighbor]:
-                distances[neighbor] = new_dist
-                previous[neighbor] = current
-                heapq.heappush(queue, (new_dist, neighbor))
-        
-    return previous
+            visited.add(current)
 
+            for neighbor in self.drone_map.neighbors(current):
+                zone = self.drone_map.zone(current)
+                if not zone.zone_type.is_passable:
+                    continue
+                new_dist = dist + zone.zone_type.cost
+                if neighbor not in distances or new_dist < distances[neighbor]:
+                    distances[neighbor] = new_dist
+                    previous[neighbor] = current
+                    heapq.heappush(queue, (new_dist, neighbor))
 
-def propose_moves(
-    drones: dict[str, Drone],
-    drone_map: DroneMap,
-    previous: dict[str, str],
-) -> dict[str, DroneState]:
-    """ For each drone still active, propose moving one step closer 
-    to the end zone, using the precomputed 'previous map'"""
+        return previous
 
-    proposed: dict[str, DroneState] = {}
-    reserved: dict[str, int] = {}  # how many drones already proposed into each zone this turn
+    def propose_moves(
+        self,
+        drones: dict[str, Drone],
+        previous: dict[str, str],
+    ) -> dict[str, DroneState]:
+        """ For each drone still active, propose moving one step closer
+        to the end zone, using the precomputed 'previous map'"""
 
-    def zone_limit(name: str) -> float:
-        if name in (drone_map.start, drone_map.end):
-            return float("inf")
-        return drone_map.zone(name).max_drones
+        proposed: dict[str, DroneState] = {}
+        reserved: dict[str, int] = {}
 
-    for drone_id, drone in drones.items():
-        if isinstance(drone.state, Delivered):
-            continue
+        def zone_limit(name: str) -> float:
+            if name in (self.drone_map.start, self.drone_map.end):
+                return float("inf")
+            return self.drone_map.zone(name).max_drones
 
-        if isinstance(drone.state, InTransit):
-            proposed[drone_id] = InZone(zone=drone.state.destination)
-            continue
-
-        if isinstance(drone.state, InZone):
-            if drone.state.zone == drone_map.end:
-                # already delivered last turn's processing — shouldn't normally hit this now
-                proposed[drone_id] = Delivered()
+        for drone_id, drone in drones.items():
+            if isinstance(drone.state, Delivered):
                 continue
 
-            next_zone = previous[drone.state.zone]
-
-            if next_zone == drone_map.end:
-                proposed[drone_id] = Delivered()
+            if isinstance(drone.state, InTransit):
+                proposed[drone_id] = InZone(zone=drone.state.destination)
                 continue
 
-            limit = zone_limit(next_zone)
-            used = reserved.get(next_zone, 0)
+            if isinstance(drone.state, InZone):
+                if drone.state.zone == self.drone_map.end:
 
-            if used < limit:
-                proposed[drone_id] = InZone(zone=next_zone)
-                reserved[next_zone] = used + 1
-            else:
-                proposed[drone_id] = InZone(zone=drone.state.zone)
-                reserved[drone.state.zone] = reserved.get(drone.state.zone, 0) + 1
+                    proposed[drone_id] = Delivered()
+                    continue
 
-    return proposed
+                next_zone = previous[drone.state.zone]
+
+                if next_zone == self.drone_map.end:
+                    proposed[drone_id] = Delivered()
+                    continue
+
+                limit = zone_limit(next_zone)
+                used = reserved.get(next_zone, 0)
+
+                if used < limit:
+                    proposed[drone_id] = InZone(zone=next_zone)
+                    reserved[next_zone] = used + 1
+                else:
+                    proposed[drone_id] = InZone(zone=drone.state.zone)
+                    reserved[drone.state.zone] = reserved.get(
+                        drone.state.zone, 0) + 1
+
+        return proposed
+
 
 if __name__ == "__main__":
     drone_map = MapParser().parse("maps/easy/02_simple_fork.txt")
-    previous = shortest_paths_to_end(drone_map)
+    planner = Planner(drone_map)
+    previous = planner.shortest_paths_to_end()
 
     drones = {
-    f"D{i}": Drone(drone_id=f"D{i}", state=InZone(zone=drone_map.start))
-    for i in range(1, drone_map.nb_drones + 1)
-}
+        f"D{i}": Drone(drone_id=f"D{i}", state=InZone(
+            zone=drone_map.start))
+        for i in range(1, drone_map.nb_drones + 1)
+    }
+
     def propose(drones, drone_map, _turn):
-        return propose_moves(drones, drone_map, previous)
+        return planner.propose_moves(drones, drone_map, previous)
 
     engine = Engine(drone_map)
     turns = engine.run_simulation(drones, propose)

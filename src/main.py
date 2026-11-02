@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 from .parser import MapParser, ParseError
 from .drone import InZone, Drone
-from .planner import shortest_paths_to_end, propose_moves
+from .planner import Planner
 from .simulation import Engine
 from .error import SimulationError
 
@@ -32,14 +32,15 @@ def run(argv: list[str]) -> int:
         print(f"Error: {e}")
         return 1
 
-    previous = shortest_paths_to_end(drone_map)
+    planner = Planner(drone_map)
+    previous = planner.shortest_paths_to_end()
     drones = {
         f"D{i}": Drone(drone_id=f"D{i}", state=InZone(zone=drone_map.start))
         for i in range(1, drone_map.nb_drones + 1)
     }
 
     def propose(drones, drone_map, _turn):
-        return propose_moves(drones, drone_map, previous)
+        return planner.propose_moves(drones, previous)
 
     try:
         engine = Engine(drone_map)
