@@ -1,4 +1,3 @@
-from .models import DroneMap, Zone
 from dataclasses import dataclass
 
 
@@ -22,7 +21,9 @@ class Delivered:
     """A drone that has reached the end zone"""
     pass
 
+
 DroneState = InZone | InTransit | Delivered
+
 
 @dataclass
 class Drone:

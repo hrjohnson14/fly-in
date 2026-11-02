@@ -1,7 +1,5 @@
 from .models import DroneMap
-from .parser import MapParser
 from .drone import DroneState, InTransit, InZone, Delivered, Drone
-from .simulation import Engine
 import heapq
 
 
@@ -88,22 +86,3 @@ class Planner:
                         drone.state.zone, 0) + 1
 
         return proposed
-
-
-if __name__ == "__main__":
-    drone_map = MapParser().parse("maps/easy/02_simple_fork.txt")
-    planner = Planner(drone_map)
-    previous = planner.shortest_paths_to_end()
-
-    drones = {
-        f"D{i}": Drone(drone_id=f"D{i}", state=InZone(
-            zone=drone_map.start))
-        for i in range(1, drone_map.nb_drones + 1)
-    }
-
-    def propose(drones, drone_map, _turn):
-        return planner.propose_moves(drones, drone_map, previous)
-
-    engine = Engine(drone_map)
-    turns = engine.run_simulation(drones, propose)
-    print(f"Delivered in {turns} turns")

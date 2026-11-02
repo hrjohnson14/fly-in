@@ -11,7 +11,7 @@ class ZoneType(Enum):
 
     @property
     def cost(self) -> int:
-        """the number of turns to return to the zone"""
+        """The number of turns it costs a drone to enter this zone"""
         if self is ZoneType.RESTRICTED:
             return 2
         else:

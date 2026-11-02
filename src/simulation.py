@@ -14,6 +14,7 @@ RESET = "\033[0m"
 TRANSIT_COLOR = "\033[95m"
 DELIVERED_COLOR = "\033[92m"
 
+
 def colorize(name: str, zone_type: ZoneType) -> str:
     """Return a zone name with its corresponding terminal color."""
     color = COLORS.get(zone_type, RESET)
@@ -190,8 +191,8 @@ class Engine:
             # The drone reached its destination.
             elif isinstance(proposed, Delivered):
                 movements.append(
-                f"{drone_id}-{DELIVERED_COLOR}{self.drone_map.end}{RESET}"
-            )
+                    f"{drone_id}-{DELIVERED_COLOR}{self.drone_map.end}{RESET}"
+                    )
         return " ".join(movements)
 
     def run_turn(
@@ -255,13 +256,3 @@ class Engine:
                 on_turn(drones, turn)
 
         return turn
-
-
-if __name__ == "__main__":
-    from .drone import InZone, InTransit
-    engine = Engine.__new__(Engine)  # skip needing a real DroneMap for this check
-    result = engine.format_turn(
-        {"D1": InZone(zone="start")},
-        {"D1": InTransit(departure="start", destination="slow_path1", arrives_next_turn=False)},
-    )
-    print(repr(result))
