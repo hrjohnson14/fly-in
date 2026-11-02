@@ -107,6 +107,39 @@ of active drones, so the whole simulation is O((V + E) log V + T·D) where
 T is the number of turns taken.
 
 
+## Visual Representation
+
+Each simulation turn is printed as one line in the exact format
+required by the subject (`D<ID>-<zone>`, space-separated, movers
+only). Zone and drone-state information is additionally conveyed
+through ANSI terminal colors, so a reader can follow what's
+happening at a glance without cross-referencing the map file:
+
+- **Restricted zones** (red): the two-turn zones a drone can only
+  enter via a one-way, uninterruptible transit.
+- **Priority zones** (blue): the preferred, lower-cost zones the
+  pathfinder favors when available.
+- **In-transit drones** (magenta): a drone currently crossing a
+  connection toward a restricted zone — distinct from a drone
+  that has already landed, so a reader can immediately spot who
+  is mid-crossing versus who has arrived.
+- **Delivered drones** (green): a drone that has just reached the
+  end zone this turn, highlighted regardless of the end zone's
+  own type, since arrival is the single most important event in
+  the simulation to notice.
+
+This turns a wall of text into something scannable: a reader can
+watch a bottleneck form (several drones repeating the same zone
+name turn after turn while waiting for capacity), see a restricted
+zone being used (magenta), and see drones finishing (green),
+without needing to trace IDs by hand.
+
+In addition to the per-turn output, the program can be run without
+a map path (`make run`, with no `MAP` argument) to present an
+interactive menu of the available maps, grouped by difficulty
+tier, so a map can be selected without typing a full file path.
+
+
 ## Example
 
 Given: 'maps/medium/03_priority_puzzle.txt'
@@ -120,21 +153,6 @@ D4-goal D5-merge_point
 D5-goal
 
 Completed in 8 turns.
-
-## Visual Representation
-
-Each simulation turn is printed as one line, following the exact format
-required by the subject (`D<ID>-<zone>`, space-separated, movers only).
-Zone names are additionally printed in color based on their zone type,
-using ANSI escape codes directly in terminal output:
-
-- Restricted zones: red
-- Priority zones: blue
-- Normal zones: default terminal color
-
-This lets a reader follow a drone's route at a glance and immediately
-spot when a drone is paying the extra cost of a restricted zone, or
-benefiting from a priority one, without cross-referencing the map file.
 
 ## Resources
 
