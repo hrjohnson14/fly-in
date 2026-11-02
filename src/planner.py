@@ -20,7 +20,6 @@ def shortest_paths_to_end(drone_map: DroneMap) -> dict[str, str]:
         if current in visited:
             continue
         visited.add(current)
-        print(current, drone_map.neighbors(current))
 
         for neighbor in drone_map.neighbors(current):
             zone = drone_map.zone(current)
@@ -44,26 +43,53 @@ def propose_moves(
     to the end zone, using the precomputed 'previous map'"""
 
     proposed: dict[str, DroneState] = {}
+    reserved: dict[str, int] = {}  # how many drones already proposed into each zone this turn
+
+    def zone_limit(name: str) -> float:
+        if name in (drone_map.start, drone_map.end):
+            return float("inf")
+        return drone_map.zone(name).max_drones
 
     for drone_id, drone in drones.items():
         if isinstance(drone.state, Delivered):
             continue
-        if isinstance(drone.state, InZone):
-            if drone.state.zone == drone_map.end:
-                proposed[drone_id] = Delivered()
-            else:
-                next_zone = previous[drone.state.zone]
-                proposed[drone_id] = InZone(zone=next_zone)
+
         if isinstance(drone.state, InTransit):
             proposed[drone_id] = InZone(zone=drone.state.destination)
+            continue
+
+        if isinstance(drone.state, InZone):
+            if drone.state.zone == drone_map.end:
+                # already delivered last turn's processing — shouldn't normally hit this now
+                proposed[drone_id] = Delivered()
+                continue
+
+            next_zone = previous[drone.state.zone]
+
+            if next_zone == drone_map.end:
+                proposed[drone_id] = Delivered()
+                continue
+
+            limit = zone_limit(next_zone)
+            used = reserved.get(next_zone, 0)
+
+            if used < limit:
+                proposed[drone_id] = InZone(zone=next_zone)
+                reserved[next_zone] = used + 1
+            else:
+                proposed[drone_id] = InZone(zone=drone.state.zone)
+                reserved[drone.state.zone] = reserved.get(drone.state.zone, 0) + 1
+
     return proposed
 
 if __name__ == "__main__":
-    drone_map = MapParser().parse("maps/easy/01_linear_path.txt")
+    drone_map = MapParser().parse("maps/easy/02_simple_fork.txt")
     previous = shortest_paths_to_end(drone_map)
 
-    drones = {"D1": Drone(drone_id="D1", state=InZone(zone=drone_map.start))}
-
+    drones = {
+    f"D{i}": Drone(drone_id=f"D{i}", state=InZone(zone=drone_map.start))
+    for i in range(1, drone_map.nb_drones + 1)
+}
     def propose(drones, drone_map, _turn):
         return propose_moves(drones, drone_map, previous)
 

@@ -1,6 +1,10 @@
 import argparse
 from pathlib import Path
 from .parser import MapParser, ParseError
+from .drone import InZone, Drone
+from .planner import shortest_paths_to_end, propose_moves
+from .simulation import run_simulation
+from .error import SimulationError
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -21,14 +25,30 @@ def run(argv: list[str]) -> int:
 
     try:
         drone_map = MapParser().parse(args.map_path)
+    except FileNotFoundError:
+        print(f"Error: File not found: {args.map_path}")
+        return 1
     except ParseError as e:
         print(f"Error: {e}")
         return 1
-    
-    print(f"Parsed map: {len(drone_map.zones)} zones, "
-          f"{len(drone_map.connections)} connections, "
-          f"start={drone_map.start}, end={drone_map.end}")
-    return 0
+
+    previous = shortest_paths_to_end(drone_map)
+    drones = {
+        f"D{i}": Drone(drone_id=f"D{i}", state=InZone(zone=drone_map.start))
+        for i in range(1, drone_map.nb_drones + 1)
+    }
+
+    def propose(drones, drone_map, _turn):
+        return propose_moves(drones, drone_map, previous)
+
+    try:
+        turns = run_simulation(drones, drone_map, propose)
+    except SimulationError as e:
+        print(f"Error: {e}")
+        return 1
+
+    print(f"\nCompleted in {turns} turns.")
+    return 0   
 
 
 if __name__ == "__main__":
