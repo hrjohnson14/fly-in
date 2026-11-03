@@ -18,7 +18,7 @@
 #     )
 
 
-# def test_parse_zone_with_metadata() -> none:
+# def test_parse_zone_with_metadata() -> None:
 #     zone = parse_zone_line(
 #         "roof1 3 4 [zone=restricted color=red max_drones=2]",
 #         2,

@@ -1,4 +1,3 @@
-from .models import DroneMap, Zone
 from dataclasses import dataclass
 
 
@@ -23,8 +22,11 @@ class Delivered:
     pass
 
 
+DroneState = InZone | InTransit | Delivered
+
+
 @dataclass
-class DroneState:
+class Drone:
     """A single drone and its current position in the simulation"""
     drone_id: str
-    state: InZone | InTransit | Delivered
+    state: DroneState
